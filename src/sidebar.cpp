@@ -190,6 +190,44 @@ private:
 };
 
 
+class ReferencesSidebarBlock : public SidebarBlock
+{
+public:
+    ReferencesSidebarBlock(Sidebar* parent)
+        : SidebarBlock(parent, _("References:"))
+    {
+        m_innerSizer->AddSpacer(PX(5));
+        m_reference = new SelectableAutoWrappingText(parent, "");
+        m_innerSizer->Add(m_reference, wxSizerFlags().Expand());
+    }
+
+    bool ShouldShowForItem(const CatalogItemPtr& item) const override
+    {
+        return item->GetReferences().size() > 0;
+    }
+
+    void Update(const CatalogItemPtr& item) override
+    {
+        wxString referenceString;
+        for (auto ref : item->GetReferences())
+        {
+            referenceString += (ref + "\n");
+        }
+        auto comment = wxJoin(item->GetExtractedComments(), '\n', '\0');
+        if (comment.StartsWith("TRANSLATORS:") || comment.StartsWith("translators:"))
+        {
+            comment.Remove(0, 12);
+            if (!comment.empty() && comment[0] == ' ')
+                comment.Remove(0, 1);
+        }
+        m_reference->SetAndWrapLabel(referenceString);
+    }
+
+private:
+    SelectableAutoWrappingText *m_reference;
+};
+
+
 class CommentSidebarBlock : public SidebarBlock
 {
 public:
@@ -767,6 +805,7 @@ Sidebar::Sidebar(wxWindow *parent, wxMenu *suggestionsMenu)
     AddBlock(new SuggestionsSidebarBlock(this, suggestionsMenu), Top);
     AddBlock(new OldMsgidSidebarBlock(this), Bottom);
     AddBlock(new ExtractedCommentSidebarBlock(this), Bottom);
+    AddBlock(new ReferencesSidebarBlock(this), Bottom);
     AddBlock(new CommentSidebarBlock(this), Bottom);
     AddBlock(new AddCommentSidebarBlock(this), Bottom);
 
